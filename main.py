@@ -1,5 +1,6 @@
 import re
 import json
+import os
 import requests
 from flask import Flask, request, jsonify
 
@@ -45,7 +46,11 @@ def get_team_stats(team_name, competition, recent_n=6):
     if not slug:
         return {"error": f"Competition not supported: {competition}"}
 
-    r = requests.get(f"{UNDERSTAT_BASE}/league/{slug}", headers=HEADERS, timeout=20)
+    r = requests.get(
+        f"{UNDERSTAT_BASE}/league/{slug}",
+        headers=HEADERS,
+        timeout=20,
+    )
     if r.status_code != 200:
         return {"error": f"League fetch failed: {r.status_code}"}
 
@@ -121,7 +126,11 @@ def get_team_stats(team_name, competition, recent_n=6):
 
 
 @app.route("/")
-@app.route("/api/understat")
+def health():
+    return jsonify({"status": "ok", "service": "understat-proxy"})
+
+
+@app.route("/understat")
 def understat():
     team        = request.args.get("team", "")
     competition = request.args.get("competition", "")
@@ -135,4 +144,5 @@ def understat():
 
 
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
